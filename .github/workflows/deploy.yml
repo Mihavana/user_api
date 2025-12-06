@@ -1,0 +1,87 @@
+# name: CI/CD Deploy
+
+# on:
+#   push:
+#     branches:
+#       - main
+#       - develop
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: "3.x"
+
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+#       - name: Run tests
+#         run: |
+#           python -m pytest tests/ || echo "No tests found"
+
+#   deploy:
+#     needs: test
+#     runs-on: ubuntu-latest
+#     if: github.ref == 'refs/heads/main'
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Setup SSH
+#         uses: webfactory/ssh-agent@v0.8.0
+#         with:
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+#       - name: Add host to known_hosts
+#         run: |
+#           mkdir -p ~/.ssh
+#           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+#       - name: Deploy with Docker Compose
+#         run: |
+#           ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} << 'EOF'
+#               cd ${{ secrets.DEPLOY_PATH }}
+#               git pull origin main
+#               docker-compose down
+#               docker-compose up -d --build
+#               docker-compose ps
+#           EOF
+
+#       - name: Verify deployment
+#         run: |
+#           ssh ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "docker ps"
+
+name: Deploy to remote server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Ensure docker-compose file is present
+        run: |
+          ls -la
+          docker --version || echo "docker not found"
+          docker compose --version || echo "docker compose not found"
+      - name: Run Docker Compose
+        run: docker compose up --build -d

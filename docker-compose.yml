@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  users_api:
+    build:
+      context: .
+    container_name: users_api
+    image: mihavanaa/user_api
+    ports: [8080:8080]
